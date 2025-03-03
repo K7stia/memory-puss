@@ -31,14 +31,17 @@
 
         h1 {
             margin: 10px 0px;
+            font-size: 2rem;
         }
 
         h2 {
             margin: 3px 0px 5px 0px;
+            font-size: 1.5rem;
         }
 
         p {
             margin: 2px 0px;
+            font-size: 1rem;
         }
 
         #menu,
@@ -51,6 +54,8 @@
             display: none;
             z-index: 2;
             position: relative;
+            width: 90%;
+            max-width: 500px;
         }
 
         #menu.active,
@@ -62,16 +67,16 @@
 
         #game-board {
             display: grid;
-            grid-template-columns: repeat(4, 100px);
-            grid-template-rows: repeat(4, 100px);
-            gap: 10px;
+            grid-template-columns: repeat(4, 80px);
+            grid-template-rows: repeat(4, 80px);
+            gap: 5px;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 15px;
         }
 
         .card {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             position: relative;
             cursor: pointer;
             transform-style: preserve-3d;
@@ -79,8 +84,8 @@
         }
 
         .card img {
-            width: 100px;
-            height: 100px;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
         }
 
@@ -113,15 +118,17 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: #333;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             z-index: 3;
+            width: 80%;
+            max-width: 300px;
         }
 
         button {
-            padding: 10px 20px;
+            padding: 12px 24px;
             margin: 5px;
-            font-size: 16px;
+            font-size: 1.1rem;
             cursor: pointer;
             position: relative;
             z-index: 3;
@@ -133,7 +140,7 @@
         }
 
         #leaderboard-list li {
-            margin: 10px 0;
+            margin: 8px 0;
         }
 
         .floating-card {
@@ -188,18 +195,68 @@
             justify-content: center;
             align-items: center;
             gap: 10px;
-            margin: 0;
+            margin: 5px 0;
         }
 
         #player-name {
             margin-bottom: 5px;
-            padding: 5px;
-            font-size: 16px;
+            padding: 8px;
+            font-size: 1rem;
             transition: border 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         #player-name.error {
             border: 2px solid red;
+        }
+
+        /* Адаптація для мобільних */
+        @media (max-width: 600px) {
+            body {
+                align-items: flex-start;
+                /* Вирівнюємо зверху для повноекранного вигляду */
+                height: 100%;
+            }
+
+            #game-container {
+                width: calc(100% - 10px);
+                /* Майже повна ширина з відступами 5px з боків */
+                height: 100%;
+                /* Повна висота */
+                padding: 5px;
+                /* Мінімальні відступи */
+                margin: 0;
+                border-radius: 0;
+                /* Прибираємо округлення для повноекранності */
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+
+            #game-container.active {
+                display: flex;
+                /* Змінюємо display для flex */
+            }
+
+            h1 {
+                font-size: 1.5rem;
+                margin: 5px 0;
+            }
+
+            p {
+                font-size: 0.9rem;
+            }
+
+            .stats {
+                gap: 8px;
+                margin: 3px 0;
+            }
+
+            #game-board {
+                margin-top: 10px;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
@@ -225,7 +282,6 @@
         <h2>Game Over</h2>
         <p>Your Score: <span id="final-score">0</span></p>
         <input type="text" id="player-name" placeholder="Enter your name" maxlength="15">
-        <!-- Обмеження до 15 символів -->
         <button onclick="submitScore()">Submit Score</button>
         <button onclick="restartGame()">Restart Game</button>
     </div>
@@ -333,6 +389,7 @@
             roundDisplay.textContent = round + 1;
             clearInterval(timer);
             timer = setInterval(updateTimer, 1000);
+            adjustGameBoardSize(); // Налаштування розміру карток
             generateCards();
         }
 
@@ -358,6 +415,27 @@
             document.getElementById("game-container").classList.add("active");
             clearFloatingCards();
             startGame();
+        }
+
+        function adjustGameBoardSize() {
+            const isMobile = window.innerWidth <= 600;
+            if (isMobile) {
+                const screenWidth = window.innerWidth;
+                const screenHeight = window.innerHeight;
+                const availableWidth = screenWidth - 10; // 5px відступ з кожного боку
+                const cardSize = Math.floor(availableWidth / 4) - 2; // 4 картки + 3 gaps по 2px
+                const boardHeight = cardSize * 4 + 6; // 4 картки + 3 gaps
+
+                cardContainer.style.gridTemplateColumns = `repeat(4, ${cardSize}px)`;
+                cardContainer.style.gridTemplateRows = `repeat(4, ${cardSize}px)`;
+                cardContainer.style.gap = "2px";
+
+                const cards = document.querySelectorAll(".card");
+                cards.forEach(card => {
+                    card.style.width = `${cardSize}px`;
+                    card.style.height = `${cardSize}px`;
+                });
+            }
         }
 
         function generateCards() {
@@ -386,20 +464,27 @@
             pairedImages.sort(() => Math.random() - 0.5);
             let backImage = backImages[(round - 1) % 3];
 
+            const isMobile = window.innerWidth <= 600;
+            const cardSize = isMobile ? Math.floor((window.innerWidth - 10) / 4) - 2 : 80;
+
             pairedImages.forEach((image) => {
                 const card = document.createElement("div");
                 card.classList.add("card");
                 card.dataset.image = image;
+                card.style.width = `${cardSize}px`;
+                card.style.height = `${cardSize}px`;
                 card.innerHTML = `
-            <div class="card-inner">
-                <div class="card-front"><img src="img/${image}" alt="Card"></div>
-                <div class="card-back"><img src="img/${backImage}" alt="Back"></div>
-            </div>
-        `;
+                    <div class="card-inner">
+                        <div class="card-front"><img src="img/${image}" alt="Card"></div>
+                        <div class="card-back"><img src="img/${backImage}" alt="Back"></div>
+                    </div>
+                `;
                 card.addEventListener("click", () => flipCard(card));
                 cards.push(card);
                 cardContainer.appendChild(card);
             });
+
+            if (isMobile) adjustGameBoardSize(); // Переналаштування розміру після генерації
         }
 
         function flipCard(card) {
@@ -449,12 +534,13 @@
 
         function startFloatingCards() {
             clearFloatingCards();
-            const totalFloatingCards = 10;
+            const isMobile = window.innerWidth <= 600;
+            const totalFloatingCards = isMobile ? 5 : 10;
             for (let i = 0; i < totalFloatingCards; i++) {
                 const card = document.createElement("div");
                 card.classList.add("floating-card");
 
-                const size = Math.random() * 100 + 100;
+                const size = isMobile ? Math.random() * 80 + 50 : Math.random() * 100 + 100;
                 card.style.width = `${size}px`;
                 card.style.height = `${size}px`;
 
@@ -495,6 +581,14 @@
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("menu").classList.add("active");
             startFloatingCards();
+        });
+
+        window.addEventListener("resize", () => {
+            if (document.getElementById("game-container").classList.contains("active")) {
+                adjustGameBoardSize();
+            } else {
+                startFloatingCards();
+            }
         });
     </script>
 </body>
