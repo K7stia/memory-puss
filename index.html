@@ -32,6 +32,7 @@
         h1 {
             margin: 10px 0px;
             font-size: 2rem;
+            /* Базовий розмір для десктопу */
         }
 
         h2 {
@@ -55,7 +56,9 @@
             z-index: 2;
             position: relative;
             width: 90%;
+            /* Зменшуємо ширину для мобільних */
             max-width: 500px;
+            /* Обмежуємо максимальну ширину */
         }
 
         #menu.active,
@@ -68,14 +71,18 @@
         #game-board {
             display: grid;
             grid-template-columns: repeat(4, 80px);
+            /* Зменшено з 100px */
             grid-template-rows: repeat(4, 80px);
             gap: 5px;
+            /* Зменшено з 10px */
             justify-content: center;
             margin-top: 15px;
+            /* Зменшено з 20px */
         }
 
         .card {
             width: 80px;
+            /* Зменшено з 100px */
             height: 80px;
             position: relative;
             cursor: pointer;
@@ -84,8 +91,8 @@
         }
 
         .card img {
-            width: 100%;
-            height: 100%;
+            width: 80px;
+            height: 80px;
             object-fit: cover;
         }
 
@@ -119,16 +126,21 @@
             transform: translate(-50%, -50%);
             background-color: #333;
             padding: 15px;
+            /* Зменшено з 20px */
             border-radius: 10px;
             z-index: 3;
             width: 80%;
+            /* Адаптивна ширина */
             max-width: 300px;
+            /* Обмежуємо для малих екранів */
         }
 
         button {
             padding: 12px 24px;
+            /* Збільшено для зручності натискання */
             margin: 5px;
             font-size: 1.1rem;
+            /* Збільшено з 16px */
             cursor: pointer;
             position: relative;
             z-index: 3;
@@ -141,6 +153,7 @@
 
         #leaderboard-list li {
             margin: 8px 0;
+            /* Зменшено з 10px */
         }
 
         .floating-card {
@@ -196,66 +209,90 @@
             align-items: center;
             gap: 10px;
             margin: 5px 0;
+            /* Збільшено для кращого вигляду */
         }
 
         #player-name {
             margin-bottom: 5px;
             padding: 8px;
+            /* Збільшено для зручності */
             font-size: 1rem;
             transition: border 0.3s ease;
             width: 100%;
+            /* Повна ширина для адаптивності */
             box-sizing: border-box;
+            /* Включаємо padding у ширину */
         }
 
         #player-name.error {
             border: 2px solid red;
         }
 
-        /* Адаптація для мобільних */
+        /* Медіазапити для мобільних пристроїв */
         @media (max-width: 600px) {
-            body {
-                align-items: flex-start;
-                /* Вирівнюємо зверху для повноекранного вигляду */
-                height: 100%;
-            }
-
-            #game-container {
-                width: calc(100% - 10px);
-                /* Майже повна ширина з відступами 5px з боків */
-                height: 100%;
-                /* Повна висота */
-                padding: 5px;
-                /* Мінімальні відступи */
-                margin: 0;
-                border-radius: 0;
-                /* Прибираємо округлення для повноекранності */
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-            }
-
-            #game-container.active {
-                display: flex;
-                /* Змінюємо display для flex */
-            }
-
             h1 {
                 font-size: 1.5rem;
-                margin: 5px 0;
+                /* Зменшуємо заголовок */
+            }
+
+            h2 {
+                font-size: 1.2rem;
             }
 
             p {
                 font-size: 0.9rem;
             }
 
-            .stats {
-                gap: 8px;
-                margin: 3px 0;
+            #game-board {
+                grid-template-columns: repeat(4, 60px);
+                /* Ще менший розмір карток */
+                grid-template-rows: repeat(4, 60px);
+                gap: 3px;
             }
 
+            .card {
+                width: 60px;
+                height: 60px;
+            }
+
+            .card img {
+                width: 60px;
+                height: 60px;
+            }
+
+            button {
+                padding: 10px 20px;
+                /* Трохи зменшуємо для малих екранів */
+                font-size: 1rem;
+            }
+
+            #player-name {
+                font-size: 0.9rem;
+                padding: 6px;
+            }
+
+            .stats {
+                gap: 8px;
+                /* Зменшуємо відстань між Score і Round */
+            }
+        }
+
+        @media (max-width: 400px) {
             #game-board {
-                margin-top: 10px;
-                margin-bottom: 10px;
+                grid-template-columns: repeat(4, 50px);
+                /* Найменший розмір для дуже малих екранів */
+                grid-template-rows: repeat(4, 50px);
+                gap: 2px;
+            }
+
+            .card {
+                width: 50px;
+                height: 50px;
+            }
+
+            .card img {
+                width: 50px;
+                height: 50px;
             }
         }
     </style>
@@ -389,7 +426,6 @@
             roundDisplay.textContent = round + 1;
             clearInterval(timer);
             timer = setInterval(updateTimer, 1000);
-            adjustGameBoardSize(); // Налаштування розміру карток
             generateCards();
         }
 
@@ -415,27 +451,6 @@
             document.getElementById("game-container").classList.add("active");
             clearFloatingCards();
             startGame();
-        }
-
-        function adjustGameBoardSize() {
-            const isMobile = window.innerWidth <= 600;
-            if (isMobile) {
-                const screenWidth = window.innerWidth;
-                const screenHeight = window.innerHeight;
-                const availableWidth = screenWidth - 10; // 5px відступ з кожного боку
-                const cardSize = Math.floor(availableWidth / 4) - 2; // 4 картки + 3 gaps по 2px
-                const boardHeight = cardSize * 4 + 6; // 4 картки + 3 gaps
-
-                cardContainer.style.gridTemplateColumns = `repeat(4, ${cardSize}px)`;
-                cardContainer.style.gridTemplateRows = `repeat(4, ${cardSize}px)`;
-                cardContainer.style.gap = "2px";
-
-                const cards = document.querySelectorAll(".card");
-                cards.forEach(card => {
-                    card.style.width = `${cardSize}px`;
-                    card.style.height = `${cardSize}px`;
-                });
-            }
         }
 
         function generateCards() {
@@ -464,27 +479,20 @@
             pairedImages.sort(() => Math.random() - 0.5);
             let backImage = backImages[(round - 1) % 3];
 
-            const isMobile = window.innerWidth <= 600;
-            const cardSize = isMobile ? Math.floor((window.innerWidth - 10) / 4) - 2 : 80;
-
             pairedImages.forEach((image) => {
                 const card = document.createElement("div");
                 card.classList.add("card");
                 card.dataset.image = image;
-                card.style.width = `${cardSize}px`;
-                card.style.height = `${cardSize}px`;
                 card.innerHTML = `
-                    <div class="card-inner">
-                        <div class="card-front"><img src="img/${image}" alt="Card"></div>
-                        <div class="card-back"><img src="img/${backImage}" alt="Back"></div>
-                    </div>
-                `;
+            <div class="card-inner">
+                <div class="card-front"><img src="img/${image}" alt="Card"></div>
+                <div class="card-back"><img src="img/${backImage}" alt="Back"></div>
+            </div>
+        `;
                 card.addEventListener("click", () => flipCard(card));
                 cards.push(card);
                 cardContainer.appendChild(card);
             });
-
-            if (isMobile) adjustGameBoardSize(); // Переналаштування розміру після генерації
         }
 
         function flipCard(card) {
@@ -534,13 +542,13 @@
 
         function startFloatingCards() {
             clearFloatingCards();
-            const isMobile = window.innerWidth <= 600;
-            const totalFloatingCards = isMobile ? 5 : 10;
+            const isMobile = window.innerWidth <= 600; // Визначаємо, чи мобільний пристрій
+            const totalFloatingCards = isMobile ? 5 : 10; // Менше карток на мобільних
             for (let i = 0; i < totalFloatingCards; i++) {
                 const card = document.createElement("div");
                 card.classList.add("floating-card");
 
-                const size = isMobile ? Math.random() * 80 + 50 : Math.random() * 100 + 100;
+                const size = isMobile ? Math.random() * 80 + 50 : Math.random() * 100 + 100; // Менший розмір для мобільних
                 card.style.width = `${size}px`;
                 card.style.height = `${size}px`;
 
@@ -583,13 +591,8 @@
             startFloatingCards();
         });
 
-        window.addEventListener("resize", () => {
-            if (document.getElementById("game-container").classList.contains("active")) {
-                adjustGameBoardSize();
-            } else {
-                startFloatingCards();
-            }
-        });
+        // Оновлюємо плаваючі картки при зміні розміру вікна
+        window.addEventListener("resize", startFloatingCards);
     </script>
 </body>
 
