@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@700&display=swap" rel="stylesheet">
+    <title>Memory Card Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #222;
+            color: #fff;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1,
+        h2 {
+            color: #caf85c;
+            font-family: "Silkscreen", serif;
+        }
+
+        h1 {
+            margin: 10px 0px;
+        }
+
+        h2 {
+            margin: 3px 0px 5px 0px;
+        }
+
+        p {
+            margin: 2px 0px;
+        }
+
+        #menu,
+        #game-container,
+        #name-modal,
+        #leaderboard-container {
+            background-color: rgba(34, 34, 34, 0.5);
+            padding: 20px 10px;
+            border-radius: 20px;
+            display: none;
+            z-index: 2;
+            position: relative;
+        }
+
+        #menu.active,
+        #game-container.active,
+        #name-modal.active,
+        #leaderboard-container.active {
+            display: block;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(4, 100px);
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .card {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.3s;
+        }
+
+        .card img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            transform-style: preserve-3d;
+        }
+
+        .card-front,
+        .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+        }
+
+        .card-front {
+            transform: rotateY(180deg);
+        }
+
+        #name-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 3;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            position: relative;
+            z-index: 3;
+        }
+
+        #leaderboard-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        #leaderboard-list li {
+            margin: 10px 0;
+        }
+
+        .floating-card {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1;
+            animation: float 10s infinite linear;
+        }
+
+        .floating-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .floating-card-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: -1;
+        }
+
+        .floating-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(var(--x-end), var(--y-end));
+            }
+        }
+
+        #round {
+            transition: transform 0.3s ease;
+        }
+
+        #round.animate {
+            transform: scale(1.2);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+        }
+
+        #player-name {
+            margin-bottom: 5px;
+            padding: 5px;
+            font-size: 16px;
+            transition: border 0.3s ease;
+        }
+
+        #player-name.error {
+            border: 2px solid red;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="menu">
+        <h1>Memory Card Game</h1>
+        <button onclick="startGameFromMenu()">Start</button>
+        <button onclick="showLeaderboard()">Leaderboard</button>
+    </div>
+
+    <div id="game-container">
+        <h1>Memory Card Game</h1>
+        <p>Time Left: <span id="timer">60</span> seconds</p>
+        <div class="stats">
+            <p>Round: <span id="round">1</span></p>
+            <p>Score: <span id="score">0</span></p>
+        </div>
+        <div id="game-board"></div>
+    </div>
+
+    <div id="name-modal">
+        <h2>Game Over</h2>
+        <p>Your Score: <span id="final-score">0</span></p>
+        <input type="text" id="player-name" placeholder="Enter your name" maxlength="15">
+        <!-- Обмеження до 15 символів -->
+        <button onclick="submitScore()">Submit Score</button>
+        <button onclick="restartGame()">Restart Game</button>
+    </div>
+
+    <div id="leaderboard-container">
+        <h1>Leaderboard</h1>
+        <ul id="leaderboard-list"></ul>
+        <button onclick="backToMenu()">Back to Menu</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, orderBy, limit, query, where } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2f0-1vzKXQgwjnN9RafRiyjpcm_7R8bw",
+            authDomain: "lpussspaceinvider.firebaseapp.com",
+            projectId: "lpussspaceinvider",
+            storageBucket: "lpussspaceinvider.firebasestorage.app",
+            messagingSenderId: "1041448955234",
+            appId: "1:1041448955234:web:c7c40e4ce488a631fa503b",
+            measurementId: "G-ZXG9YNJ5DS"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.submitScore = async function () {
+            const playerNameInput = document.getElementById("player-name");
+            const playerName = playerNameInput.value.trim();
+            if (!playerName) {
+                playerNameInput.classList.add("error");
+                return;
+            }
+            playerNameInput.classList.remove("error");
+            await addDoc(collection(db, "leaderboard"), {
+                name: playerName,
+                score: score,
+                gamepuss: "memorygame"
+            });
+            document.getElementById("name-modal").classList.remove("active");
+            document.getElementById("menu").classList.add("active");
+            loadLeaderboard();
+            startFloatingCards();
+        }
+
+        async function loadLeaderboard() {
+            const leaderboardList = document.getElementById("leaderboard-list");
+            leaderboardList.innerHTML = "";
+            const q = query(collection(db, "leaderboard"), where("gamepuss", "==", "memorygame"), orderBy("score", "desc"), limit(10));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((doc) => {
+                const li = document.createElement("li");
+                li.textContent = `${doc.data().name}: ${doc.data().score} points`;
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        window.showLeaderboard = function () {
+            document.getElementById("menu").classList.remove("active");
+            document.getElementById("leaderboard-container").classList.add("active");
+            loadLeaderboard();
+            startFloatingCards();
+        }
+
+        window.backToMenu = function () {
+            document.getElementById("leaderboard-container").classList.remove("active");
+            document.getElementById("menu").classList.add("active");
+            startFloatingCards();
+        }
+    </script>
+
+    <script>
+        const cardContainer = document.getElementById("game-board");
+        const scoreDisplay = document.getElementById("score");
+        const timerDisplay = document.getElementById("timer");
+        const roundDisplay = document.getElementById("round");
+        const finalScoreDisplay = document.getElementById("final-score");
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let timer;
+        let round = 0;
+        let timeLeft = 60;
+        let score = 0;
+
+        const totalCards = 16;
+        const totalImages = 19;
+        const backImages = ["back1.png", "back2.png", "back3.png"];
+
+        function startGameFromMenu() {
+            document.getElementById("menu").classList.remove("active");
+            document.getElementById("game-container").classList.add("active");
+            clearFloatingCards();
+            startGame();
+        }
+
+        function startGame() {
+            round = 0;
+            matchedPairs = 0;
+            score = 0;
+            timeLeft = 60;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeLeft;
+            roundDisplay.textContent = round + 1;
+            clearInterval(timer);
+            timer = setInterval(updateTimer, 1000);
+            generateCards();
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                endGame();
+            }
+        }
+
+        function endGame() {
+            document.getElementById("game-container").classList.remove("active");
+            document.getElementById("name-modal").classList.add("active");
+            finalScoreDisplay.textContent = score;
+            clearFloatingCards();
+            document.getElementById("player-name").value = "";
+        }
+
+        function restartGame() {
+            document.getElementById("name-modal").classList.remove("active");
+            document.getElementById("game-container").classList.add("active");
+            clearFloatingCards();
+            startGame();
+        }
+
+        function generateCards() {
+            round++;
+            matchedPairs = 0;
+            cardContainer.innerHTML = "";
+            cards = [];
+            flippedCards = [];
+
+            roundDisplay.textContent = round;
+            roundDisplay.classList.add("animate");
+            setTimeout(() => {
+                roundDisplay.classList.remove("animate");
+            }, 300);
+
+            let selectedImages = [];
+            while (selectedImages.length < totalCards / 2) {
+                let randomNum = Math.floor(Math.random() * totalImages) + 1;
+                let imageName = `${randomNum}.png`;
+                if (!selectedImages.includes(imageName)) {
+                    selectedImages.push(imageName);
+                }
+            }
+
+            let pairedImages = [...selectedImages, ...selectedImages];
+            pairedImages.sort(() => Math.random() - 0.5);
+            let backImage = backImages[(round - 1) % 3];
+
+            pairedImages.forEach((image) => {
+                const card = document.createElement("div");
+                card.classList.add("card");
+                card.dataset.image = image;
+                card.innerHTML = `
+            <div class="card-inner">
+                <div class="card-front"><img src="img/${image}" alt="Card"></div>
+                <div class="card-back"><img src="img/${backImage}" alt="Back"></div>
+            </div>
+        `;
+                card.addEventListener("click", () => flipCard(card));
+                cards.push(card);
+                cardContainer.appendChild(card);
+            });
+        }
+
+        function flipCard(card) {
+            if (flippedCards.includes(card) || card.classList.contains("matched")) {
+                return;
+            }
+
+            if (flippedCards.length >= 2) {
+                resetFlippedCards();
+            }
+
+            card.classList.add("flipped");
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                checkMatch();
+            }
+        }
+
+        function resetFlippedCards() {
+            flippedCards.forEach(card => {
+                if (!card.classList.contains("matched")) {
+                    card.classList.remove("flipped");
+                }
+            });
+            flippedCards = flippedCards.filter(card => card.classList.contains("matched"));
+        }
+
+        function checkMatch() {
+            let [card1, card2] = flippedCards;
+            if (card1.dataset.image === card2.dataset.image) {
+                card1.classList.add("matched");
+                card2.classList.add("matched");
+                score += 5;
+                scoreDisplay.textContent = score;
+                matchedPairs++;
+                flippedCards = [];
+                if (matchedPairs === totalCards / 2 && timeLeft > 0) {
+                    setTimeout(generateCards, 500);
+                }
+            } else {
+                setTimeout(() => {
+                    resetFlippedCards();
+                }, 500);
+            }
+        }
+
+        function startFloatingCards() {
+            clearFloatingCards();
+            const totalFloatingCards = 10;
+            for (let i = 0; i < totalFloatingCards; i++) {
+                const card = document.createElement("div");
+                card.classList.add("floating-card");
+
+                const size = Math.random() * 100 + 100;
+                card.style.width = `${size}px`;
+                card.style.height = `${size}px`;
+
+                const imageNum = Math.floor(Math.random() * 19) + 1;
+                card.innerHTML = `
+                    <div class="floating-card-inner">
+                        <div class="floating-card-background"></div>
+                        <img src="img/${imageNum}.png" alt="Floating Card">
+                    </div>
+                `;
+
+                const startX = Math.random() * (window.innerWidth - size);
+                const startY = Math.random() * (window.innerHeight - size);
+                card.style.left = `${startX}px`;
+                card.style.top = `${startY}px`;
+
+                const endX = (Math.random() - 0.5) * window.innerWidth * 2;
+                const endY = (Math.random() - 0.5) * window.innerHeight * 2;
+                card.style.setProperty("--x-end", `${endX}px`);
+                card.style.setProperty("--y-end", `${endY}px`);
+
+                const duration = Math.random() * 15 + 10;
+                card.style.animationDuration = `${duration}s`;
+
+                document.body.appendChild(card);
+
+                card.addEventListener("animationend", () => {
+                    card.remove();
+                });
+            }
+        }
+
+        function clearFloatingCards() {
+            const floatingCards = document.querySelectorAll(".floating-card");
+            floatingCards.forEach(card => card.remove());
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("menu").classList.add("active");
+            startFloatingCards();
+        });
+    </script>
+</body>
+
+</html>
